@@ -17,7 +17,8 @@ CREATE_TABLE_TRANSACTION = (f"CREATE TABLE IF NOT EXISTS transactions ("
                             f"amount DECIMAL(10, 2) NOT NULL,"
                             f"timestamp DATE NOT NULL,"
                             f"account_id INT NOT NULL,"
-                            f"FOREIGN KEY (account_id) REFERENCES accounts(account_id))")
+                            f"transaction_id_from INT,"
+                            f"FOREIGN KEY (transaction_id_from) REFERENCES transactions(transaction_id))")
 
 
 # insert queries
@@ -29,3 +30,4 @@ UPDATE_ACCOUNT_BALANCE = "UPDATE accounts SET balance = %s WHERE account_id = %s
 
 # fetch queries
 LOGIN_USER = "SELECT * FROM users WHERE username = %s AND password = %s"
+NEXT_TRANSACTION_ID = "SELECT NEXTVAL('transactions_transaction_id_seq')"
