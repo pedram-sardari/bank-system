@@ -1,6 +1,6 @@
 import psycopg2
 from psycopg2 import extras
-from db_config import load_db_confing
+from .db_config import load_db_confing
 
 
 class DBManager:
@@ -17,7 +17,6 @@ class DBManager:
 
     def __enter__(self):
         try:
-            print(self.db_config)
             self.connection = psycopg2.connect(**self.db_config)
             self.cursor = self.connection.cursor(cursor_factory=psycopg2.extras.DictCursor)
         except psycopg2.DatabaseError:
