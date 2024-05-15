@@ -28,4 +28,5 @@ CREATE_NEW_ACCOUNT = "INSERT INTO accounts (balance, user_id) VALUES (%s, %s)"
 UPDATE_ACCOUNT_BALANCE = "UPDATE accounts SET balance = %s WHERE account_id = %s"
 
 # fetch queries
+USERNAME_EXISTENCE = "SELECT user_id FROM users WHERE username = %s"
 LOGIN_USER = "SELECT * FROM users WHERE username = %s AND password = %s"

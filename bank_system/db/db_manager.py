@@ -1,6 +1,6 @@
 import psycopg2
 from psycopg2 import extras
-from db_config import load_db_confing
+from .db_config import load_db_confing
 
 
 class DBManager:
