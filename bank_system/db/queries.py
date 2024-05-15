@@ -23,8 +23,9 @@ CREATE_TABLE_TRANSACTION = (f"CREATE TABLE IF NOT EXISTS transactions ("
 # insert queries
 REGISTER_NEW_USER = "INSERT INTO users (username, password) VALUES (%s, %s)"
 CREATE_NEW_ACCOUNT = "INSERT INTO accounts (balance, user_id) VALUES (%s, %s)"
-SAVE_TRANSACTION = ("INSERT INTO transactions (transaction_type, amount, date_time, account_id, transaction_id_from) "
-                    "VALUES (%s, %s, %s, %s, %s)")
+SAVE_TRANSACTION = ("INSERT INTO transactions "
+                    "(transaction_id, transaction_type, amount, date_time, account_id, transaction_id_from) "
+                    "VALUES (%s, %s, %s, %s, %s, %s)")
 
 # update queries
 UPDATE_ACCOUNT_BALANCE = "UPDATE accounts SET balance = %s WHERE account_id = %s"
@@ -32,7 +33,7 @@ UPDATE_ACCOUNT_BALANCE = "UPDATE accounts SET balance = %s WHERE account_id = %s
 # fetch queries
 LOGIN_USER = "SELECT * FROM users WHERE username = %s AND password = %s"
 NEXT_TRANSACTION_ID = "SELECT NEXTVAL('transactions_transaction_id_seq')"
-GET_ACCOUNTS = "SELECT * FROM accounts"
+FETCH_ACCOUNTS = "SELECT * FROM accounts"
 FILTER = " WHERE "
 BY_USER_ID = "user_id = %s"
 BY_ACCOUNT_ID = "account_id = %s"
