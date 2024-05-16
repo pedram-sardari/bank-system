@@ -1,6 +1,7 @@
 import datetime
 from typing import Self
 import tabulate
+import decimal
 
 from .response import Response
 from .. import messages as m
@@ -25,7 +26,7 @@ class BankAccount:
             response.message = "Invalid amount. Must be a positive number"
         else:
             response.bool_value = True
-            response.value = amount
+            response.value = decimal.Decimal(amount)
         return response
 
     # TODO: add return result_message to functions
@@ -63,30 +64,39 @@ class BankAccount:
 
     def __update_balance(self, cursor, amount):
         new_balance = self.balance + amount
+        response = Response()
         if new_balance < 0:  # TODO: In case of minimum balance consider minimum balance instead of 0
-            raise ValueError(m.Messages.NOT_ENOUGH_BALANCE_ERROR)
-        cursor.execute(q.UPDATE_ACCOUNT_BALANCE, (new_balance, self.account_id))
+            response.message = m.Messages.NOT_ENOUGH_BALANCE_ERROR
+        else:
+            cursor.execute(q.UPDATE_ACCOUNT_BALANCE, (new_balance, self.account_id))
+            response.message = "Balance is updated by {} and final balance is {}".format(amount, new_balance)
+            response.bool_value = True
+        return response
 
     def __execute_transaction(self, cursor, transaction_type, amount, transaction_id_from=None):
-        self.__update_balance(cursor, amount)
+        response = self.__update_balance(cursor, amount)
 
-        cursor.execute(q.NEXT_TRANSACTION_ID)
-        transaction_id = cursor.fetchone()['nextval']
+        if response.bool_value:
+            cursor.execute(q.NEXT_TRANSACTION_ID)
+            transaction_id = cursor.fetchone()['nextval']
 
-        timestamp = datetime.datetime.now()
-        params = (transaction_id, transaction_type, amount, timestamp,
-                  self.account_id, transaction_id_from)
-        print(params)
-        cursor.execute(q.SAVE_TRANSACTION, params)
-        return transaction_id
+            timestamp = datetime.datetime.now()
+            params = (transaction_id, transaction_type, amount, timestamp,
+                      self.account_id, transaction_id_from)
+            cursor.execute(q.SAVE_TRANSACTION, params)
+            response.value = transaction_id
+            response.message = "Transaction {} was done successfully".format(transaction_id) + response.message
+        return response
 
     # TODO: amount must be positive float
     def deposit(self, cursor, amount):
-        self.__execute_transaction(cursor, 'deposit', amount)
+        response = self.__execute_transaction(cursor, 'deposit', amount)
+        return response
 
     def withdraw(self, cursor, amount):
         """:raise not enough balance"""
-        self.__execute_transaction(cursor, 'withdrawal', -amount)
+        response = self.__execute_transaction(cursor, 'withdrawal', -amount)
+        return response
 
     def transfer(self, cursor, amount, another_account: Self):
         # TODO: save the transaction

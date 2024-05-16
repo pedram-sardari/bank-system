@@ -14,9 +14,10 @@ class Messages:
                  "\n\n Your choice: ")
 
     USER_MENU = ("\n--------- ( user menu ) ---------- "
-                 "\n0. Quit"
+                 "\n0. Logout"
                  "\n1. Create_account "
                  "\n2. Deposit "
                  "\n3. Withdraw "
-                 "\n4. Transfer "
+                 "\n4. Transfer"
+                 "\n5. Show My Accounts "
                  "\n\n Your choice: ")
