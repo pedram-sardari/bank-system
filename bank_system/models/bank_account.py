@@ -1,12 +1,11 @@
 import datetime
+from typing import Self
 import tabulate
-import prettytable
-from typing import Self, List
 
-from psycopg2 import extras
+from .response import Response
+from .. import messages as m
 from ..db import db_manager
 from ..db import queries as q
-from .. import messages as m
 
 
 class BankAccount:
@@ -15,10 +14,25 @@ class BankAccount:
         self.balance = balance  # TODO: balance should be a positive float / minimum balance
         self.user_id = user_id
 
+    @staticmethod
+    def validate_amount(amount):
+        response = Response()
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                raise ValueError()  # Todo proper message
+        except (TypeError, ValueError):
+            response.message = "Invalid amount. Must be a positive number"
+        else:
+            response.bool_value = True
+            response.value = amount
+        return response
+
     # TODO: add return result_message to functions
     def create_account(self, cursor):
         """Insert this account to accounts table in database"""
-        cursor.execute(q.CREATE_NEW_ACCOUNT, (self.balance, self.user_id))
+        cursor.execute(q.CREATE_NEW_ACCOUNT, (self.balance, self.user_id))  # TODO: handle failed creation
+        return Response(message="Account with initial balance {} has been created".format(self.balance))
 
     @staticmethod
     def __execute_query__fetch_accounts(cursor, user_id=None, account_id=None):
@@ -47,10 +61,6 @@ class BankAccount:
         table = tabulate.tabulate(account_records, headers='keys', tablefmt='grid')
         print(table)
 
-    @staticmethod
-    def timestamp():
-        return datetime.datetime.now()
-
     def __update_balance(self, cursor, amount):
         new_balance = self.balance + amount
         if new_balance < 0:  # TODO: In case of minimum balance consider minimum balance instead of 0
@@ -63,7 +73,8 @@ class BankAccount:
         cursor.execute(q.NEXT_TRANSACTION_ID)
         transaction_id = cursor.fetchone()['nextval']
 
-        params = (transaction_id, transaction_type, amount, BankAccount.timestamp(),
+        timestamp = datetime.datetime.now()
+        params = (transaction_id, transaction_type, amount, timestamp,
                   self.account_id, transaction_id_from)
         print(params)
         cursor.execute(q.SAVE_TRANSACTION, params)
@@ -91,11 +102,12 @@ class BankAccount:
     def __repr__(self):
         return str(self)
 
+
 if __name__ == "__main__":
     db_manager_obj = db_manager.DBManager(cursor_type='RealDictCursor')
     with db_manager_obj as cur:
         account_obj = BankAccount(50.2, 2)
-        BankAccount.display_accounts(cur,user_id=2)
+        BankAccount.display_accounts(cur, user_id=2)
         print(BankAccount.get_accounts(cur, user_id=2))
         account_obj_1 = BankAccount.get_accounts(cur, account_id=1)[0]
         account_obj_2 = BankAccount.get_accounts(cur, account_id=2)[0]

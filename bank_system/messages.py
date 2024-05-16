@@ -5,3 +5,18 @@ class Messages:
 
     # bank_account
     NOT_ENOUGH_BALANCE_ERROR = "\033[91mNot Enough Balance.\033[0m"
+
+    # menu
+    MAIN_MENU = ("\n--------- ( main menu ) ---------- "
+                 "\n0. Quit"
+                 "\n1. Register "
+                 "\n2. Login "
+                 "\n\n Your choice: ")
+
+    USER_MENU = ("\n--------- ( user menu ) ---------- "
+                 "\n0. Quit"
+                 "\n1. Create_account "
+                 "\n2. Deposit "
+                 "\n3. Withdraw "
+                 "\n4. Transfer "
+                 "\n\n Your choice: ")
