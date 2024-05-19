@@ -1,6 +1,7 @@
 import psycopg2
-from psycopg2 import extras
-from .db_config import load_db_confing
+from psycopg2 import extras, extensions
+from dotenv import dotenv_values
+from typing import Union
 
 
 class DBManager:
@@ -8,21 +9,20 @@ class DBManager:
         """
         :param cursor_type: 'DictCursor' or 'RealDictCursor'
         """
-        self.db_config = load_db_confing()
+        self.db_config = dotenv_values('.env')
         self.connection = self.create_new_connection()
         self.cursor_type = cursor_type
         self.cursor = None
 
-    def create_new_connection(self):
+    def create_new_connection(self) -> Union[psycopg2.extensions.connection]:
         try:
             connection = psycopg2.connect(**self.db_config)
         except psycopg2.DatabaseError:
-            print("\033[90mDatabaseError\033[0m")
-            return None
+            raise psycopg2.DatabaseError("DatabaseError")
         else:
             return connection
 
-    def create_new_cursor(self):
+    def create_new_cursor(self) -> psycopg2.extensions.cursor:
         if self.cursor_type == 'RealDictCursor':
             cursor_factory = psycopg2.extras.RealDictCursor
         else:
@@ -69,24 +69,27 @@ class DBManager:
 
     def __del__(self):
         print('Closing connection ...')
-        self.connection.close()
+        if self.connection:
+            self.connection.close()
 
 
 if __name__ == '__main__':
     # cursor_type='RealDictCursor'
     db_manager = DBManager()
     with db_manager as cursor:
-        cursor.execute("CREATE TABLE f (a INT);")
+        # cursor.execute("CREATE TABLE f (a INT);")
         cursor.execute("INSERT INTO f (a) VALUES (50)")
         # db_manager.commit()
         cursor.execute("SELECT * FROM f")
 
         cursor.execute("UPDATE users SET username='maman' WHERE username='pedi'")
-        cursor.execute("INSERT INTO users (username, password) VALUES ('hasan', '2341341')")
+        # cursor.execute("INSERT INTO users (username, password) VALUES ('hasan', '2341341')")
         cursor.execute("SELECT * FROM users")
         # print(cursor.fetchall())
         print(cursor.fetchone())
         print(cursor.fetchone())
         print(cursor.fetchone())
         print(cursor.fetchone())
-    print(db_manager.cursor)
+        cursor.execute("SELECT * FROM users LIMIT 0")
+        print(cursor.description)
+    # print(db_manager.cursor)

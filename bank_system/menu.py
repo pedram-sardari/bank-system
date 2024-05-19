@@ -1,99 +1,127 @@
 import os
 import time
-import decimal
-from .models.response import Response
-from .db.db_manager import DBManager
+
 from . import messages as m
-from .models.user import User
+from .db.db_manager import DBManager
+from .model_managers.bank_account_manager import BankAccountManager
+from .model_managers.bank_transaction_manager import BankTransactionManager
+from .model_managers.user_manager import UserManager
 from .models.bank_account import BankAccount
+from .models.user import User
 
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
-def main_menu(db_manager):
-    while True:
-        clear_screen()
-        choice = input(m.Messages.MAIN_MENU)
-        if choice == '0':
-            break
-        elif choice == '1':
-            username = input("Username: ").strip()
-            password = input("Password: ").strip()
-            with db_manager as cursor:
-                user = User(username, password)
-                response = user.register(cursor)
-        elif choice == '2':
-            username = input("Username: ").strip()
-            password = input("Password: ").strip()
-            with db_manager as cursor:
-                response = User.login(username, password, cursor)
-                if response.bool_value:
-                    logged_in_user = response.value
-                    response = user_menu(db_manager, logged_in_user, response)
-        else:
-            response = Response(message="Invalid choice")
+class Menu:
+    def __init__(self, user_manager: UserManager, bank_account_manager: BankAccountManager,
+                 bank_transaction_manager: BankTransactionManager):
+        self.user_manager = user_manager
+        self.bank_account_manager = bank_account_manager
+        self.bank_transaction_manager = bank_transaction_manager
 
-        clear_screen()
-        print(f"{'\n' * 3}{response.message}{'\n' * 3}")
-        time.sleep(4)
+    def __call__(self, *args, **kwargs):
+        self.main_menu()
 
+    def main_menu(self):
+        msg = "Welcome to bank"
+        while True:
+            clear_screen()
+            print(f"{'\n' * 3}{msg}{'\n' * 3}")
+            time.sleep(4)
+            clear_screen()
 
-def user_menu(db_manager, logged_in_user, response):
-    while True:
-        clear_screen()
-        print(f"{'\n' * 3}{response.message}{'\n' * 3}")
-        time.sleep(4)
-        clear_screen()
-        choice = input(m.Messages.USER_MENU)
-        if choice == '0':
-            return Response(message='See you later')
-        elif choice == '1':
-            with db_manager as cursor:
-                BankAccount.display_accounts(cursor, user_id=logged_in_user.user_id)
+            choice = input(m.Messages.MAIN_MENU)
+            if choice == '0':
+                break
+            elif choice == '1':
+                username = input("Username: ").strip()
+                password = input("Password: ").strip()
+                msg = self.user_manager.register(username, password)
+            elif choice == '2':
+                username = input("Username: ").strip()
+                password = input("Password: ").strip()
+                user = self.user_manager.login(username, password)
+                account_list = self.bank_account_manager.filter(user_id=user.user_id)
+                if account_list:
+                    user.account_list = account_list
+                print("You have successfully logged in.")
+                while True:
+                    try:
+                        msg = self.user_menu(user)
+                        break
+                    except Exception as e:
+                        print(e)
+                        # raise
+            else:
+                msg = "Invalid choice"
+
+    def user_menu(self, logged_in_user: User):
+        msg = f'welcome {logged_in_user.username}'
+        while True:
+            clear_screen()
+            print(f"{'\n' * 3}{msg}{'\n' * 3}")
+            time.sleep(4)
+            clear_screen()
+            choice = input(m.Messages.USER_MENU)
+            if choice == '0':
+                return 'See you later'
+            elif choice == '1':
                 initial_balance = input("Initial Balance: ")
-                response = BankAccount.validate_amount(initial_balance)
-                if response.bool_value:
-                    initial_balance = response.value
-                    new_account = BankAccount(initial_balance, logged_in_user.user_id)
-                    response = new_account.create_account(cursor)
-        elif choice == '2':
-            with db_manager as cursor:
-                BankAccount.display_accounts(cursor, user_id=logged_in_user.user_id)
+                initial_balance = BankAccount.is_positive_number(initial_balance)
+                new_account = BankAccount(balance=initial_balance, user_id=logged_in_user.user_id)
+                new_account.account_id = self.bank_account_manager.save(new_account)
+                logged_in_user.add_new_account(new_account)
+                msg = 'successful account creation'
+            elif choice == '2':
                 account_id = input("Account ID: ")
                 amount = input("Amount: ")
-                response = BankAccount.validate_amount(amount)
-                if response.bool_value:
-                    selected_account = BankAccount.get_accounts(cursor, account_id=account_id)[0]
-                    response = selected_account.deposit(cursor, amount=response.value)
-        elif choice == '3':
-            with db_manager as cursor:
-                BankAccount.display_accounts(cursor, user_id=logged_in_user.user_id)
-                account_id = input("Your Account ID: ")
+                amount = BankAccount.is_positive_number(amount)
+                account = logged_in_user.find_my_account_by_id(account_id)
+                transaction = account.deposit(amount)
+                self.bank_transaction_manager.save(transaction)
+                self.bank_account_manager.save(account)
+                msg = 'successful deposit'
+            elif choice == '3':
+                account_id = input("Account ID: ")
                 amount = input("Amount: ")
-                response = BankAccount.validate_amount(amount)
-                if response.bool_value:
-                    selected_account = BankAccount.get_accounts(cursor, account_id=account_id)[0]
-                    response = selected_account.withdraw(cursor, amount=response.value)
-        elif choice == '4':
-            with db_manager as cursor:
-                BankAccount.display_accounts(cursor, user_id=logged_in_user.user_id)
-                account_id_from = input("Your Account ID: ")
-                account_id_to = input("Target Account ID: ")
+                amount = BankAccount.is_positive_number(amount)
+                account = logged_in_user.find_my_account_by_id(account_id)
+                transaction = account.withdraw(amount)
+                self.bank_account_manager.save(account)
+                self.bank_transaction_manager.save(transaction)
+                msg = 'successful withdraw'
+            elif choice == '4':
+                account_id_self = input("Your Account ID: ")
+                account_id_other = input("Target Account ID: ")
                 amount = input("Amount: ")
-                response = BankAccount.validate_amount(amount)
-                if response.bool_value:
-                    selected_account = BankAccount.get_accounts(cursor, account_id=account_id)[0]
-                    response = selected_account.withdraw(cursor, amount=response.value)
-        elif choice == '5':
-            with db_manager as cursor:
-                BankAccount.display_accounts(cursor, user_id=logged_in_user.user_id)
-            input("OK? ")
-        else:
-            response = Response(message="Invalid choice")
+                amount = BankAccount.is_positive_number(amount)
+                account_self = logged_in_user.find_my_account_by_id(account_id_self)
+                try:
+                    account_other = logged_in_user.find_my_account_by_id(account_id_other)
+                except ValueError:
+                    account_other = self.bank_account_manager.get(account_id=account_id_other)
+
+                if account_self and account_other:
+                    transaction_self, transaction_other = account_self.transfer(account_other, amount)
+                    # save accounts
+                    self.bank_account_manager.save(account_self)
+                    self.bank_account_manager.save(account_other)
+                    # save transactions
+                    self.bank_transaction_manager.save(transaction_self)
+                    self.bank_transaction_manager.save(transaction_other)
+            elif choice == '5':
+                BankAccount.display_account_list(logged_in_user.account_list)
+                input("\nPress any key to continue... ")
+            else:
+                msg = "Invalid choice"
+
+    def register_user(self):
+        pass
 
 
 if __name__ == "__main__":
     db_manager_obj = DBManager('RealDictCursor')
-    main_menu(db_manager_obj)
+    menu = Menu(db_manager_obj)
+    menu.main_menu()

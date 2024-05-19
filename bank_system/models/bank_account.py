@@ -1,128 +1,68 @@
-import datetime
-from typing import Self
-import tabulate
 import decimal
+from typing import Self
 
-from .response import Response
+from .bank_transaction import BankTransaction
 from .. import messages as m
 from ..db import db_manager
-from ..db import queries as q
 
 
 class BankAccount:
-    def __init__(self, balance: float, user_id: int, account_id=None):
+    table_name = 'accounts'
+
+    def __init__(self, balance: decimal.Decimal, user_id: int, account_id=None):
         self.account_id = account_id
         self.balance = balance  # TODO: balance should be a positive float / minimum balance
         self.user_id = user_id
 
     @staticmethod
-    def validate_amount(amount):
-        response = Response()
+    def is_positive_number(amount: str) -> decimal.Decimal:
         try:
             amount = float(amount)
             if amount <= 0:
-                raise ValueError()  # Todo proper message
+                raise ValueError
         except (TypeError, ValueError):
-            response.message = "Invalid amount. Must be a positive number"
+            raise ValueError("Invalid input (Must be a positive number)")
         else:
-            response.bool_value = True
-            response.value = decimal.Decimal(amount)
-        return response
-
-    # TODO: add return result_message to functions
-    def create_account(self, cursor):
-        """Insert this account to accounts table in database"""
-        cursor.execute(q.CREATE_NEW_ACCOUNT, (self.balance, self.user_id))  # TODO: handle failed creation
-        return Response(message="Account with initial balance {} has been created".format(self.balance))
+            return decimal.Decimal(amount)
 
     @staticmethod
-    def __execute_query__fetch_accounts(cursor, user_id=None, account_id=None):
-        # TODO: handle invalid ids
-        query = q.FETCH_ACCOUNTS
-        params = []
-        if user_id or account_id:
-            query += q.FILTER
-            if user_id:
-                query += q.BY_USER_ID
-                params.append(user_id)
-            elif account_id:
-                query += q.BY_ACCOUNT_ID
-                params.append(account_id)
-        cursor.execute(query, params)
-        return cursor.fetchall()
+    def display_account_list(account_list):
+        fields = '\n' + 'account_id'.center(15) + '|' + 'balance'.center(15)
+        seperator = ('-' * 15) + '+' + ('-' * 15)
+        print(fields)
+        if not account_list:
+            raise ValueError("You don't have any account in the bank!")
+        for account in account_list:
+            print(seperator)
+            print(account)
 
-    @classmethod
-    def get_accounts(cls, cursor, user_id=None, account_id=None):
-        account_records = cls.__execute_query__fetch_accounts(cursor, user_id, account_id)
-        return [cls(**record) for record in account_records]
-
-    @staticmethod
-    def display_accounts(cursor, user_id=None, account_id=None):
-        account_records = BankAccount.__execute_query__fetch_accounts(cursor, user_id, account_id)
-        table = tabulate.tabulate(account_records, headers='keys', tablefmt='grid')
-        print(table)
-
-    def __update_balance(self, cursor, amount):
+    def __update_balance(self, amount: decimal.Decimal):
         new_balance = self.balance + amount
-        response = Response()
         if new_balance < 0:  # TODO: In case of minimum balance consider minimum balance instead of 0
-            response.message = m.Messages.NOT_ENOUGH_BALANCE_ERROR
-        else:
-            cursor.execute(q.UPDATE_ACCOUNT_BALANCE, (new_balance, self.account_id))
-            response.message = "Balance is updated by {} and final balance is {}".format(amount, new_balance)
-            response.bool_value = True
-        return response
+            raise ValueError(m.Messages.NOT_ENOUGH_BALANCE_ERROR)
+        self.balance = new_balance
 
-    def __execute_transaction(self, cursor, transaction_type, amount, transaction_id_from=None):
-        response = self.__update_balance(cursor, amount)
+    def deposit(self, amount: decimal.Decimal):
+        self.__update_balance(amount)
+        return BankTransaction(transaction_type='deposit', amount=amount, account_id=self.account_id)
 
-        if response.bool_value:
-            cursor.execute(q.NEXT_TRANSACTION_ID)
-            transaction_id = cursor.fetchone()['nextval']
+    def withdraw(self, amount: decimal.Decimal):
+        self.__update_balance(-amount)
+        return BankTransaction(transaction_type='withdrawal', amount=-amount, account_id=self.account_id)
 
-            timestamp = datetime.datetime.now()
-            params = (transaction_id, transaction_type, amount, timestamp,
-                      self.account_id, transaction_id_from)
-            cursor.execute(q.SAVE_TRANSACTION, params)
-            response.value = transaction_id
-            response.message = "Transaction {} was done successfully".format(transaction_id) + response.message
-        return response
-
-    # TODO: amount must be positive float
-    def deposit(self, cursor, amount):
-        response = self.__execute_transaction(cursor, 'deposit', amount)
-        return response
-
-    def withdraw(self, cursor, amount):
-        """:raise not enough balance"""
-        response = self.__execute_transaction(cursor, 'withdrawal', -amount)
-        return response
-
-    def transfer(self, cursor, amount, another_account: Self):
-        # TODO: save the transaction
-        """:raise not enough balance"""
-        transaction_id_from = self.__execute_transaction(cursor, 'transfer', -amount)
-        another_account.__execute_transaction(cursor, 'transfer', amount, transaction_id_from)
+    def transfer(self, another_account: Self, amount: decimal.Decimal):
+        self.__update_balance(-amount)
+        another_account.__update_balance(amount)
+        transaction_self = BankTransaction(transaction_type='transfer', amount=-amount, account_id=self.account_id,
+                                           account_id_other=another_account.account_id)
+        transaction_another = BankTransaction(transaction_type='transfer', amount=amount,
+                                              account_id=another_account.account_id, account_id_other=self.account_id)
+        return transaction_self, transaction_another
 
     def __str__(self):
-        attr_dict = [self.__dict__]
-        table = tabulate.tabulate(attr_dict, headers='keys', tablefmt='grid')
-        return '\n' + str(table) + '\n'
+        return f'{self.account_id}'.center(15) + '|' + f'{self.balance} $'.center(15)
 
     def __repr__(self):
         return str(self)
 
 
-if __name__ == "__main__":
-    db_manager_obj = db_manager.DBManager(cursor_type='RealDictCursor')
-    with db_manager_obj as cur:
-        account_obj = BankAccount(50.2, 2)
-        BankAccount.display_accounts(cur, user_id=2)
-        print(BankAccount.get_accounts(cur, user_id=2))
-        account_obj_1 = BankAccount.get_accounts(cur, account_id=1)[0]
-        account_obj_2 = BankAccount.get_accounts(cur, account_id=2)[0]
-        # account_obj.create_account(cur)
-        # account_obj_1.deposit(cur, amount=50)
-        # account_obj_1.withdraw(cur, amount=10)
-        # account_obj_1.withdraw(cur, amount=130)
-        # account_obj_1.transfer(cur, 60, account_obj_2)

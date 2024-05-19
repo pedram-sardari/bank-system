@@ -1,5 +1,6 @@
 TRANSACTIONS = ("deposit", "withdrawal", "transfer")
 
+# create table queries
 CREATE_TABLE_USER = ("CREATE TABLE IF NOT EXISTS users ("
                      "user_id SERIAL PRIMARY KEY,"
                      "username VARCHAR(50) NOT NULL UNIQUE,"
@@ -17,24 +18,24 @@ CREATE_TABLE_TRANSACTION = (f"CREATE TABLE IF NOT EXISTS transactions ("
                             f"amount DECIMAL(10, 2) NOT NULL,"
                             f"date_time TIMESTAMP NOT NULL,"
                             f"account_id INT NOT NULL,"
-                            f"transaction_id_from INT,"
-                            f"FOREIGN KEY (transaction_id_from) REFERENCES transactions(transaction_id))")
+                            f"account_id_other INT,"
+                            f"FOREIGN KEY (account_id) REFERENCES accounts(account_id),"
+                            f"FOREIGN KEY (account_id_other) REFERENCES accounts(account_id))")
 
 # insert queries
-REGISTER_NEW_USER = "INSERT INTO users (username, password) VALUES (%s, %s)"
-CREATE_NEW_ACCOUNT = "INSERT INTO accounts (balance, user_id) VALUES (%s, %s)"
-SAVE_TRANSACTION = ("INSERT INTO transactions "
-                    "(transaction_id, transaction_type, amount, date_time, account_id, transaction_id_from) "
-                    "VALUES (%s, %s, %s, %s, %s, %s)")
+SAVE_NEW_USER = "INSERT INTO users (username, password) VALUES (%s, %s)"
+SAVE_NEW_ACCOUNT = "INSERT INTO accounts (balance, user_id) VALUES (%s, %s) RETURNING account_id"
+SAVE_NEW_TRANSACTION = ("INSERT INTO transactions "
+                        "(transaction_type, amount, date_time, account_id, account_id_other) "
+                        "VALUES (%s, %s, %s, %s, %s)")
 
 # update queries
-UPDATE_ACCOUNT_BALANCE = "UPDATE accounts SET balance = %s WHERE account_id = %s"
+UPDATE_ACCOUNT_BALANCE = "UPDATE accounts SET balance = %s WHERE account_id = %s RETURNING account_id"
+UPDATE_USER_PASSWORD = "UPDATE users SET password = %s WHERE user_id = %S"
 
 # fetch queries
-USERNAME_EXISTENCE = "SELECT user_id FROM users WHERE username = %s"
-LOGIN_USER = "SELECT * FROM users WHERE username = %s AND password = %s"
-NEXT_TRANSACTION_ID = "SELECT NEXTVAL('transactions_transaction_id_seq')"
-FETCH_ACCOUNTS = "SELECT * FROM accounts"
-FILTER = " WHERE "
-BY_USER_ID = "user_id = %s"
-BY_ACCOUNT_ID = "account_id = %s"
+ALL = "SELECT * FROM {}"
+WHERE = " WHERE "
+AND = ' AND '
+BY_COLUMN = '{} = %s'
+
