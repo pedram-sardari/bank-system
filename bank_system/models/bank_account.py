@@ -1,9 +1,13 @@
+from typing import Tuple
 import decimal
 from typing import Self
 
 from .bank_transaction import BankTransaction
 from .. import messages as m
-from ..db import db_manager
+# from ..db import db_manager
+from ..loggig_decorator import TransactionLogger
+
+transaction_logger = TransactionLogger()
 
 
 class BankAccount:
@@ -27,11 +31,11 @@ class BankAccount:
 
     @staticmethod
     def display_account_list(account_list):
+        if not account_list:
+            raise ValueError("You don't have any account in the bank!")
         fields = '\n' + 'account_id'.center(15) + '|' + 'balance'.center(15)
         seperator = ('-' * 15) + '+' + ('-' * 15)
         print(fields)
-        if not account_list:
-            raise ValueError("You don't have any account in the bank!")
         for account in account_list:
             print(seperator)
             print(account)
@@ -42,15 +46,18 @@ class BankAccount:
             raise ValueError(m.Messages.NOT_ENOUGH_BALANCE_ERROR)
         self.balance = new_balance
 
-    def deposit(self, amount: decimal.Decimal):
+    @transaction_logger
+    def deposit(self, *, amount: decimal.Decimal) -> BankTransaction:
         self.__update_balance(amount)
         return BankTransaction(transaction_type='deposit', amount=amount, account_id=self.account_id)
 
-    def withdraw(self, amount: decimal.Decimal):
+    @transaction_logger
+    def withdraw(self, *, amount: decimal.Decimal) -> BankTransaction:
         self.__update_balance(-amount)
         return BankTransaction(transaction_type='withdrawal', amount=-amount, account_id=self.account_id)
 
-    def transfer(self, another_account: Self, amount: decimal.Decimal):
+    @transaction_logger
+    def transfer(self, *, another_account: Self, amount: decimal.Decimal) -> Tuple[BankTransaction, BankTransaction]:
         self.__update_balance(-amount)
         another_account.__update_balance(amount)
         transaction_self = BankTransaction(transaction_type='transfer', amount=-amount, account_id=self.account_id,
@@ -63,6 +70,15 @@ class BankAccount:
         return f'{self.account_id}'.center(15) + '|' + f'{self.balance} $'.center(15)
 
     def __repr__(self):
-        return str(self)
+        return "bank_account_obj={" + f"account_id:{self.account_id}, balance:{self.balance}" + '}'
 
 
+if __name__ == '__main__':
+    acc = BankAccount(decimal.Decimal(50), 2, 6)
+    acc2 = BankAccount(decimal.Decimal(30), 2, 5)
+
+    acc.deposit(amount=decimal.Decimal(20))
+    acc.withdraw(amount=decimal.Decimal(20))
+    acc.transfer(another_account=acc2,amount=decimal.Decimal(20))
+    # print(acc.withdraw.__name__)
+    print(acc)

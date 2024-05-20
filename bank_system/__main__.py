@@ -1,8 +1,8 @@
-from .menu import Menu
 from .db.db_manager import DBManager
-from .model_managers.user_manager import UserManager
+from .menu import Menu
 from .model_managers.bank_account_manager import BankAccountManager
 from .model_managers.bank_transaction_manager import BankTransactionManager
+from .model_managers.user_manager import UserManager
 
 db_manager = DBManager('RealDictCursor')
 user_manager = UserManager(db_manager)

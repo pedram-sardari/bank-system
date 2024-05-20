@@ -7,6 +7,7 @@ def create_tables(cursor):
     cursor.execute(q.CREATE_TABLE_USER)
     cursor.execute(q.CREATE_TABLE_ACCOUNT)
     cursor.execute(q.CREATE_TABLE_TRANSACTION)
+    cursor.execute(q.CREATE_TABLE_TRANSACTION_LOG)
 
 
 with db_manager.DBManager() as cur:

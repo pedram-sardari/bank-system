@@ -1,10 +1,10 @@
 class Messages:
     # user
-    INVALID_USERNAME_OR_PASSWORD_ERROR = "\033[91mInvalid username or password\033[0m"
-    USERNAME_ALREADY_EXISTS_ERROR = "\033[91mThe username '{}' already exists.\033[0m"
+    INVALID_USERNAME_OR_PASSWORD_ERROR = "Invalid username or password"
+    USERNAME_ALREADY_EXISTS_ERROR = "The username '{}' already exists."
 
     # bank_account
-    NOT_ENOUGH_BALANCE_ERROR = "\033[91mNot Enough Balance.\033[0m"
+    NOT_ENOUGH_BALANCE_ERROR = "Not Enough Balance."
 
     # menu
     MAIN_MENU = ("\n--------- ( main menu ) ---------- "
