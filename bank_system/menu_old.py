@@ -7,6 +7,7 @@ from .model_managers.bank_account_manager import BankAccountManager
 from .model_managers.bank_transaction_manager import BankTransactionManager
 from .model_managers.user_manager import UserManager
 from .models.bank_account import BankAccount
+from .models.bank_transaction import BankTransaction
 from .models.user import User
 
 
@@ -29,7 +30,7 @@ class Menu:
         while True:
             clear_screen()
             print(f"{'\n' * 3}{msg}{'\n' * 3}")
-            time.sleep(4)
+            input("enter...")
             clear_screen()
 
             choice = input(m.Messages.MAIN_MENU)
@@ -53,7 +54,7 @@ class Menu:
                         break
                     except Exception as e:
                         print(e)
-                        # raise
+                        raise
             else:
                 msg = "Invalid choice"
 
@@ -62,7 +63,7 @@ class Menu:
         while True:
             clear_screen()
             print(f"{'\n' * 3}{msg}{'\n' * 3}")
-            time.sleep(4)
+            input("enter...")
             clear_screen()
             choice = input(m.Messages.USER_MENU)
             if choice == '0':
@@ -115,6 +116,24 @@ class Menu:
             elif choice == '5':
                 BankAccount.display_account_list(logged_in_user.account_list)
                 input("\nPress any key to continue... ")
+            elif choice == '6':
+                account_id = input("Your Account ID: ")
+                transaction_type = input("Transaction type: ")
+                min_amount = input("Min amount: ").strip()
+                if min_amount:
+                    min_amount = BankAccount.is_positive_number(min_amount)
+                max_amount = input("Max amount: ")
+                if max_amount:
+                    max_amount = BankAccount.is_positive_number(max_amount)
+                transaction_list = self.bank_transaction_manager.filter(
+                    account_id=account_id,
+                    transaction_type=transaction_type,
+                    amount=(min_amount, max_amount)
+                )
+                BankTransaction.display_transaction_list(transaction_list)
+
+
+
             else:
                 msg = "Invalid choice"
 

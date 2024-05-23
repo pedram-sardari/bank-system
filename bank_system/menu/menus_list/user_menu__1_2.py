@@ -66,6 +66,20 @@ def transfer__1_2_5(menu_variables):
         return 'Successful transfer'
     raise ValueError('Invalid target account ID')
 
-def display_transactions(menu_variables):
-    """See one of your accounts transactions based on a specific filter"""
 
+def display_transactions__1_2_6(menu_variables):
+    """See one of your accounts transactions based on a specific filter"""
+    account_id = input("Your Account ID: ")
+    transaction_type = input("Transaction type: ")
+    min_amount = input("Min amount: ").strip()
+    if min_amount:
+        min_amount = menu_variables['BankAccount'].is_positive_number(min_amount)
+    max_amount = input("Max amount: ")
+    if max_amount:
+        max_amount = menu_variables['BankAccount'].is_positive_number(max_amount)
+    transaction_list = menu_variables['bank_transaction_manager'].filter(
+        account_id=account_id,
+        transaction_type=transaction_type,
+        amount=(min_amount, max_amount)
+    )
+    menu_variables['BankTransaction'].display_transaction_list(transaction_list)

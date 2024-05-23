@@ -60,4 +60,5 @@ ALL = "SELECT * FROM {}"
 WHERE = " WHERE "
 AND = ' AND '
 BY_COLUMN = '{} = %s'
+BETWEEN_AND = 'ABS({}) BETWEEN %s AND %s OR {} BETWEEN %s AND %s'
 

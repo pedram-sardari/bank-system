@@ -5,7 +5,7 @@ from typing import Self
 from .bank_transaction import BankTransaction
 from .. import messages as m
 # from ..db import db_manager
-from ..loggig_decorator import TransactionLogger
+from ..model_managers.loggig_decorator import TransactionLogger
 
 transaction_logger = TransactionLogger()
 
@@ -31,6 +31,7 @@ class BankAccount:
 
     @staticmethod
     def display_account_list(account_list):
+        print(f'lisssssssttttsss........{account_list}')
         if not account_list:
             raise ValueError("You don't have any account in the bank!")
         fields = '\n' + 'account_id'.center(15) + '|' + 'balance'.center(15)

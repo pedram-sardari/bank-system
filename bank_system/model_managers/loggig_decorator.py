@@ -1,8 +1,8 @@
 import logging
 from functools import wraps
-from .models.bank_transaction_log import BankTransactionLog
-from .db import db_queries as q
-from .db.db_manager import DBManager
+from bank_system.models.bank_transaction_log import BankTransactionLog
+from bank_system.db import db_queries as q
+from bank_system.db.db_manager import DBManager
 
 
 class Logger:
