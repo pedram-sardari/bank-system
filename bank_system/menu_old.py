@@ -79,7 +79,7 @@ class Menu:
                 amount = input("Amount: ")
                 amount = BankAccount.is_positive_number(amount)
                 account = logged_in_user.find_my_account_by_id(account_id)
-                transaction = account.deposit(amount = amount)
+                transaction = account.deposit(amount=amount)
                 self.bank_transaction_manager.save(transaction)
                 self.bank_account_manager.save(account)
                 msg = 'successful deposit'
@@ -104,7 +104,8 @@ class Menu:
                     account_other = self.bank_account_manager.get(account_id=account_id_other)
 
                 if account_self and account_other:
-                    transaction_self, transaction_other = account_self.transfer(another_account=account_other, amount=amount)
+                    transaction_self, transaction_other = account_self.transfer(another_account=account_other,
+                                                                                amount=amount)
                     # save accounts
                     self.bank_account_manager.save(account_self)
                     self.bank_account_manager.save(account_other)
@@ -116,9 +117,6 @@ class Menu:
                 input("\nPress any key to continue... ")
             else:
                 msg = "Invalid choice"
-
-    def register_user(self):
-        pass
 
 
 if __name__ == "__main__":
