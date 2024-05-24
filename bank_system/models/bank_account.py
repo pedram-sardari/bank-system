@@ -31,7 +31,7 @@ class BankAccount:
 
     @staticmethod
     def display_account_list(account_list):
-        print(f'lisssssssttttsss........{account_list}')
+        # print(f'lisssssssttttsss........{account_list}')
         if not account_list:
             raise ValueError("You don't have any account in the bank!")
         fields = '\n' + 'account_id'.center(15) + '|' + 'balance'.center(15)

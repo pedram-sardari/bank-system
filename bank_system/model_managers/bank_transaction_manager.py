@@ -17,9 +17,12 @@ class BankTransactionManager(ModelManager):
                     min_amount = v[0]
                     max_amount = v[1]
                     if min_amount and max_amount:
-                        filter_list.append(f"ABS({k}) BETWEEN %s AND %s OR {k} BETWEEN %s AND %s")
-                        params.append(min_amount)
-                        params.append(max_amount)
+                        # filter_list.append(f"(ABS({k}) BETWEEN %s AND %s OR {k} BETWEEN %s AND %s)")
+                        filter_list.append(f"ABS({k}) BETWEEN %s AND %s")
+                        params.append(abs(min_amount))
+                        params.append(abs(max_amount))
+                        # params.append(min_amount)
+                        # params.append(max_amount)
                     elif min_amount:
                         filter_list.append(f'ABS({k}) > %s')
                         params.append(min_amount)
@@ -31,6 +34,9 @@ class BankTransactionManager(ModelManager):
                     params.append(v)
             query += q.WHERE + q.AND.join(filter_list) + ' ORDER BY ABS(amount)'
         with self.db_manager as cursor:
+            # print('.....................')
+            # print(query)
+            # print(params)
             cursor.execute(query, params)
             records = cursor.fetchall()
             if records:
@@ -46,6 +52,7 @@ class BankTransactionManager(ModelManager):
                       transaction.account_id_other)
             with self.db_manager as cursor:
                 cursor.execute(query, params)
+
 
 if __name__ == '__main__':
     m = BankTransactionManager('ad')

@@ -83,3 +83,4 @@ def display_transactions__1_2_6(menu_variables):
         amount=(min_amount, max_amount)
     )
     menu_variables['BankTransaction'].display_transaction_list(transaction_list)
+    return ''
